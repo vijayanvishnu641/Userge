@@ -8,12 +8,12 @@
 
 import os
 
+import aiofiles
 from PIL import Image
 from telegraph import upload_file
 
-from userge.utils import post_to_telegraph
 from userge import userge, Message, Config, pool
-from userge.utils import progress
+from userge.utils import post_to_telegraph, progress
 
 _T_LIMIT = 5242880
 
@@ -52,8 +52,8 @@ async def telegraph_(message: Message):
                 progress=progress,
                 progress_args=(message, "trying to download")
             )
-            with open(dl_loc, "r") as jv:
-                text = jv.read()
+            async with aiofiles.open(dl_loc, "r") as jv:
+                text = await jv.read()
             header = message.input_str
             if not header:
                 header = "Pasted content by @theuserge"
@@ -67,7 +67,7 @@ async def telegraph_(message: Message):
             else:
                 text = content
                 header = "Pasted content by @theuserge"
-        t_url = await pool.run_in_thread(post_to_telegraph)(header, text)
+        t_url = await pool.run_in_thread(post_to_telegraph)(header, text.replace("\n", "<br>"))
         jv_text = f"**[Here Your Telegra.ph Link!]({t_url})**"
         await message.edit(text=jv_text, disable_web_page_preview=True)
         return
